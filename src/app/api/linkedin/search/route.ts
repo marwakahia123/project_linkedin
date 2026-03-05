@@ -665,7 +665,7 @@ export async function POST(request: Request) {
                 const profile = (await unipileClient.users.getProfile({
                   account_id: sessionRes.data.unipile_account_id,
                   identifier: slug,
-                  linkedin_sections: "*",
+                  linkedin_sections: "*" as never,
                 })) as {
                   work_experience?: Array<{ company?: string; description?: string }>;
                   current_positions?: Array<{ company?: string; description?: string }>;
