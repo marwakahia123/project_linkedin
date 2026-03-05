@@ -720,7 +720,12 @@ export default function DashboardProspectsPage() {
             disabled={searchLoading || saveLoading || autoEnriching}
             className="rounded-lg bg-[#EA580C] px-6 py-2.5 font-medium text-white transition hover:bg-[#C2410C] disabled:opacity-50"
           >
-            {searchLoading ? "Recherche en cours…" : "Lancer la recherche"}
+            {searchLoading ? (
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Recherche en cours…
+              </span>
+            ) : "Lancer la recherche"}
           </button>
           {(selectedIndustry || selectedLocation) && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -745,6 +750,16 @@ export default function DashboardProspectsPage() {
           )}
         </div>
       </form>
+
+      {searchLoading && (
+        <div className="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-6">
+          <svg className="h-6 w-6 animate-spin text-[#EA580C]" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          <div>
+            <p className="text-sm font-medium text-[#EA580C]">Recherche en cours…</p>
+            <p className="text-xs text-orange-600">Cela peut prendre jusqu&apos;à une minute selon les filtres utilisés.</p>
+          </div>
+        </div>
+      )}
 
       {apolloStatus !== null && !apolloStatus.configured && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
