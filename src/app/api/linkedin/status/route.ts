@@ -37,9 +37,12 @@ export async function GET() {
         const accounts = await unipileClient.account.getAll() as {
           items?: Array<{ id?: string; name?: string; type?: string }>;
         };
-        const match = (accounts.items ?? []).find(
-          (a) => a.name === user.id && a.type === "LINKEDIN"
+        // Le champ "name" d'Unipile contient le nom LinkedIn, pas le user_id Supabase
+        // On prend le dernier compte LinkedIn créé (le plus récent)
+        const linkedinAccounts = (accounts.items ?? []).filter(
+          (a) => a.type === "LINKEDIN" && a.id
         );
+        const match = linkedinAccounts[linkedinAccounts.length - 1];
         if (match?.id) {
           await supabase.from("linkedin_sessions").upsert(
             {
