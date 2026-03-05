@@ -71,8 +71,15 @@ export async function POST() {
     });
   } catch (err) {
     console.error("[LinkedIn connect] Erreur Hosted Auth:", err);
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
     const errBody = err && typeof err === "object" && "body" in err ? (err as { body?: unknown }).body : undefined;
+    console.error("[LinkedIn connect] Error body:", JSON.stringify(errBody));
+    console.error("[LinkedIn connect] Env check:", {
+      tokenDefined: !!process.env.UNIPILE_ACCESS_TOKEN,
+      tokenLength: (process.env.UNIPILE_ACCESS_TOKEN ?? "").length,
+      apiUrlDefined: !!process.env.UNIPILE_API_URL,
+      apiUrl: process.env.UNIPILE_API_URL,
+    });
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
     const bodyObj = errBody && typeof errBody === "object" ? errBody as { msg?: string; message?: string; type?: string; title?: string } : undefined;
     const detail = bodyObj?.msg ?? bodyObj?.message;
     const errorType = bodyObj?.type;
@@ -88,11 +95,13 @@ export async function POST() {
       return NextResponse.json(
         {
           error: errorMsg,
-          debug: process.env.NODE_ENV === "development" ? {
+          debug: {
             tokenDefined: !!process.env.UNIPILE_ACCESS_TOKEN,
+            tokenLength: (process.env.UNIPILE_ACCESS_TOKEN ?? "").length,
             apiUrlDefined: !!process.env.UNIPILE_API_URL,
+            apiUrl: process.env.UNIPILE_API_URL,
             unipile: errBody,
-          } : undefined,
+          },
         },
         { status: 500 }
       );
@@ -101,7 +110,7 @@ export async function POST() {
     return NextResponse.json(
       {
         error: "Impossible de générer le lien de connexion: " + fullError,
-        debug: process.env.NODE_ENV === "development" && errBody ? { unipile: errBody } : undefined,
+        debug: { unipile: errBody },
       },
       { status: 500 }
     );
