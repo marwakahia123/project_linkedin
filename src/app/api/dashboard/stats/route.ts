@@ -42,7 +42,7 @@ export async function GET() {
       .from("prospects")
       .select("id, status, invited_at")
       .eq("user_id", user.id);
-    prospects = fallback.data ?? [];
+    prospects = (fallback.data ?? []).map((p) => ({ ...p, first_message_sent_at: null }));
   }
 
   const invitedTodayRows = invitedResult.data;
