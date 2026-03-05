@@ -56,6 +56,25 @@ const INDUSTRY_TO_SECTOR: Record<string, string[]> = {
   "technologies": ["tech", "informatique", "software"],
 };
 
+const TITLE_EQUIVALENCES: Record<string, string[]> = {
+  "responsable": [
+    "responsable", "directeur", "directrice", "manager", "chef",
+    "cheffe", "head", "lead", "gérant", "gérante", "dirigeant",
+    "dirigeante", "CEO", "fondateur", "fondatrice", "président",
+    "présidente", "agent", "chargé", "chargée", "expert", "experte",
+    "spécialiste", "coordinateur", "coordinatrice", "superviseur",
+  ],
+  "commercial": [
+    "commercial", "commerciale", "commerciaux", "vente", "ventes",
+    "sales", "business", "clientèle", "clients", "développement",
+    "affaires", "account",
+  ],
+  "directeur": [
+    "directeur", "directrice", "responsable", "manager", "head",
+    "chef", "cheffe", "lead",
+  ],
+};
+
 const AUTO_SECTOR_MAP: Record<string, string[]> = {
   "batiment": [
     "bâtiment", "batiment", "BTP", "construction", "chantier", "travaux",
@@ -375,6 +394,7 @@ function matchesTitle(prospect: ProspectResult, jobTitle: string): boolean {
   if (titleWords.length === 0) return true;
 
   const matchCount = titleWords.filter((word) => {
+    // 1. Match direct (avec variantes genre)
     const variants = new Set<string>();
     variants.add(word);
     variants.add(word.replace(/s$/, ""));
@@ -388,6 +408,34 @@ function matchesTitle(prospect: ProspectResult, jobTitle: string): boolean {
       if (variant.length < 3) continue;
       if (matchWholeWord(prospectText, variant)) return true;
     }
+
+    // 2. Match par équivalence
+    // Chercher les équivalences pour le mot ET ses variantes
+    let equivalences: string[] = [];
+    const lookupVariants = [
+      word,
+      word.replace(/s$/, ""),
+      word.replace(/e$/, ""),
+      word.replace(/es$/, ""),
+      word.replace(/aux$/, "al"),
+      word.replace(/trice$/, "teur"),
+      word.replace(/euse$/, "eur"),
+    ];
+    for (const variant of lookupVariants) {
+      if (TITLE_EQUIVALENCES[variant]) {
+        equivalences = TITLE_EQUIVALENCES[variant];
+        break;
+      }
+    }
+    for (const equiv of equivalences) {
+      const equivNorm = normalize(equiv);
+      if (equivNorm.length > 6) {
+        if (prospectText.includes(equivNorm)) return true;
+      } else {
+        if (matchWholeWord(prospectText, equivNorm)) return true;
+      }
+    }
+
     return false;
   }).length;
 
@@ -641,13 +689,14 @@ export async function POST(request: Request) {
           }
 
           if (sectorForFilter && prospects.length > 0) {
-            const needEnrich = prospects
-              .filter((p) => {
-                const titleOk = matchesTitle(p, jobTitle);
-                const sectorOk = matchesSectorStrict(p, sectorForFilter);
-                return titleOk && !sectorOk.matches;
-              })
-              .slice(0, 5);
+            const candidates = prospects.filter((p) => {
+              const titleOk = matchesTitle(p, jobTitle);
+              const sectorOk = matchesSectorStrict(p, sectorForFilter);
+              return titleOk && !sectorOk.matches;
+            });
+            const needEnrich = candidates.slice(0, 15); // Max 15 enrichissements par page
+
+            console.log(`[Enrichissement] ${candidates.length} candidats, enrichissement de ${needEnrich.length}`);
 
             for (const prospect of needEnrich) {
               try {
@@ -682,6 +731,11 @@ export async function POST(request: Request) {
                 }
 
                 prospect.headline = [prospect.headline, ...enrichedParts].filter(Boolean).join(" ");
+
+                const sectorAfter = matchesSectorStrict(prospect, sectorForFilter);
+                if (sectorAfter.matches) {
+                  console.log(`[Enrichi+Match] ${prospect.full_name} → ${prospect.company} → ${sectorAfter.matchedTerms.join(", ")}`);
+                }
 
                 await new Promise((r) => setTimeout(r, 2000 + Math.random() * 2000));
               } catch {

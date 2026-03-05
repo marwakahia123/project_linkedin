@@ -10,5 +10,11 @@ export function createClient() {
   if (!url || !key) {
     console.error('Supabase: NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY manquant dans .env.local');
   }
-  return createBrowserClient(url, key);
+  return createBrowserClient(url, key, {
+    cookieOptions: {
+      path: "/",
+      sameSite: "lax",
+      secure: typeof window !== "undefined" && window.location?.protocol === "https:",
+    },
+  });
 }

@@ -31,6 +31,11 @@ export async function createServerSupabaseClient() {
           }
         },
       },
+      cookieOptions: {
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      },
     }
   );
 }

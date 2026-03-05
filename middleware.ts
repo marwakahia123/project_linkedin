@@ -26,6 +26,11 @@ export async function middleware(request: NextRequest) {
           );
         },
       },
+      cookieOptions: {
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      },
     });
 
     const { data: { user } } = await supabase.auth.getUser();
