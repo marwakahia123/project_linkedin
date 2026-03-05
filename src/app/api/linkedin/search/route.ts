@@ -640,6 +640,11 @@ export async function POST(request: Request) {
     const sectorVariants = getSectorVariants(sectorForMatching || sectorQuery);
     const queries = generateSearchQueries(jobTitle, sectorQuery, sectorVariants);
 
+    // Recherche par localisation/industrie seule : utiliser un keyword générique
+    if (queries.length === 0 && (locationIds.length > 0 || industryIds.length > 0)) {
+      queries.push("*");
+    }
+
     const TARGET = 50;
     const MAX_API_CALLS = 15;
     const RESULTS_PER_PAGE = 50;
