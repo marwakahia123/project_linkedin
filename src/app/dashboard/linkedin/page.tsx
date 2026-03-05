@@ -20,7 +20,7 @@ export default function DashboardLinkedInPage() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch("/api/linkedin/status");
+      const res = await fetch("/api/linkedin/status", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setStatus(data);
@@ -124,7 +124,8 @@ export default function DashboardLinkedInPage() {
         return;
       }
       setMessage({ type: "success", text: "Vous êtes déconnecté de LinkedIn." });
-      await fetchStatus();
+      setStatus({ connected: false, status: "disconnected", updated_at: null });
+      await fetchStatus(); // Rafraîchit pour confirmer (évite le cache)
     } catch {
       setMessage({ type: "error", text: "Erreur réseau ou serveur." });
     } finally {

@@ -31,8 +31,9 @@ export async function GET() {
 
     const connected = !!session && session.status === "connected" && !!session.unipile_account_id;
 
-    // Si pas connecté en base, vérifier directement sur Unipile (le webhook a pu échouer)
-    if (!connected && isUnipileConfigured()) {
+    // Si pas connecté en base ET pas de ligne "disconnected" (déconnexion volontaire), vérifier Unipile
+    const explicitlyDisconnected = !!session && session.status === "disconnected";
+    if (!connected && !explicitlyDisconnected && isUnipileConfigured()) {
       try {
         const accounts = await unipileClient.account.getAll() as {
           items?: Array<{ id?: string; name?: string; type?: string }>;
