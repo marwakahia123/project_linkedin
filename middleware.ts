@@ -6,12 +6,16 @@ import { NextResponse, type NextRequest } from 'next/server';
  * et met à jour les cookies (évite les déconnexions intempestives).
  */
 export async function middleware(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -22,14 +26,21 @@ export async function middleware(request: NextRequest) {
           );
         },
       },
+    });
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const isProtected = request.nextUrl.pathname.startsWith("/dashboard");
+    if (isProtected && !user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      return NextResponse.redirect(loginUrl);
     }
-  );
 
-  // Obligatoire : valide le JWT et rafraîchit la session.
-  // Sans cet appel, les utilisateurs peuvent être déconnectés aléatoirement.
-  await supabase.auth.getUser();
-
-  return supabaseResponse;
+    return supabaseResponse;
+  } catch {
+    return NextResponse.next({ request });
+  }
 }
 
 export const config = {
