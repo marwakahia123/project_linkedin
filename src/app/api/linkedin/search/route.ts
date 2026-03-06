@@ -288,30 +288,34 @@ function generateSearchQueries(
   if (hasIndustryIds) {
     // Mode A : industryIds résolus — keywords = titre uniquement.
     // LinkedIn filtre le secteur via ses IDs natifs.
-    for (const title of titleVariants.slice(0, 3)) {
+    for (const title of titleVariants.slice(0, 5)) {
       if (title) queries.push(title);
     }
   } else if (titleVariants[0] && uniqueSectorTerms.length > 0) {
     // Mode B : pas d'industryIds — mélange titre + secteur dans keywords
-    for (const sectorTerm of uniqueSectorTerms) {
+    for (const title of titleVariants.slice(0, 2)) {
+      if (title) queries.push(title);
+    }
+    for (const term of uniqueSectorTerms.slice(0, 5)) {
+      queries.push(term);
+    }
+    for (const sectorTerm of uniqueSectorTerms.slice(0, 5)) {
       for (const title of titleVariants.slice(0, 2)) {
-        queries.push(`${title} ${sectorTerm}`.trim());
+        if (title) queries.push(`${title} ${sectorTerm}`.trim());
       }
     }
-    for (const title of titleVariants.slice(0, 2)) {
-      queries.push(title);
-    }
   } else if (titleVariants[0]) {
-    for (const title of titleVariants.slice(0, 3)) {
+    for (const title of titleVariants.slice(0, 5)) {
       if (title) queries.push(title);
     }
   } else if (uniqueSectorTerms.length > 0) {
-    for (const term of uniqueSectorTerms.slice(0, 8)) {
+    for (const term of uniqueSectorTerms.slice(0, 10)) {
       queries.push(term);
     }
   }
 
-  return [...new Set(queries.filter(Boolean))].slice(0, 20);
+  const result = [...new Set(queries.filter(Boolean))].slice(0, 25);
+  return result.length > 0 ? result : ["*"];
 }
 
 const SECTOR_SYNONYMS: Record<string, string[]> = {
@@ -477,7 +481,7 @@ function matchesTitle(prospect: ProspectResult, jobTitle: string): boolean {
   const threshold =
     titleWords.length <= 2
       ? titleWords.length
-      : Math.ceil(titleWords.length * 0.6);
+      : Math.ceil(titleWords.length * 0.5);
 
   return matchCount >= threshold;
 }
@@ -542,7 +546,7 @@ function matchesSectorStrict(
   const allLoose = [...new Set([...looseDirectMatch, ...looseSynonymMatch])];
 
   return {
-    matches: hasDirectMatch || allMatched.length >= 2 || allLoose.length > 0,
+    matches: hasDirectMatch || allMatched.length >= 1 || allLoose.length > 0,
     matchedTerms: [...new Set([...allMatched, ...allLoose])],
   };
 }
@@ -664,7 +668,7 @@ export async function POST(request: Request) {
     }
 
     const TARGET = 50;
-    const MAX_API_CALLS = 15;
+    const MAX_API_CALLS = 20;
     const MAX_DURATION_MS = 150_000; // 150s max (marge de 30s avant timeout Vercel 180s)
     const searchStartTime = Date.now();
     const RESULTS_PER_PAGE = 50;
@@ -732,8 +736,10 @@ export async function POST(request: Request) {
           }
 
           if (prospects.length === 0) {
-            console.log(`[Search] 0 nouveaux résultats, passage à la requête suivante`);
-            break;
+            console.log(`[Search] 0 nouveaux résultats, essai page suivante (start=${start + RESULTS_PER_PAGE})`);
+            start += RESULTS_PER_PAGE;
+            if (newItems.length < RESULTS_PER_PAGE) break;
+            continue;
           }
 
           if (sectorForFilter && prospects.length > 0) {
