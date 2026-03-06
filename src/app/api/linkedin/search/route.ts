@@ -794,16 +794,21 @@ export async function POST(request: Request) {
           }
 
           for (const prospect of prospects) {
-            const result = filterProspectStrict(prospect, jobTitle, sectorForFilter);
-            const enriched = {
-              ...prospect,
-              sectorMatch: result.sectorMatch,
-              matchedTerms: result.matchedTerms.length > 0 ? result.matchedTerms : undefined,
-            };
-            if (result.passes) {
-              strictResults.push(enriched);
+            if (hasIndustryIds) {
+              // LinkedIn a déjà filtré par industry + keywords → tous stricts
+              strictResults.push({ ...prospect, sectorMatch: true });
             } else {
-              otherResults.push(enriched);
+              const result = filterProspectStrict(prospect, jobTitle, sectorForFilter);
+              const enriched = {
+                ...prospect,
+                sectorMatch: result.sectorMatch,
+                matchedTerms: result.matchedTerms.length > 0 ? result.matchedTerms : undefined,
+              };
+              if (result.passes) {
+                strictResults.push(enriched);
+              } else {
+                otherResults.push(enriched);
+              }
             }
           }
 
