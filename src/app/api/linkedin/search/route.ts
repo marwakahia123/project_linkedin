@@ -654,7 +654,7 @@ export async function POST(request: Request) {
     const sectorOriginalText = (body.sectorOriginalText ?? "").trim();
     const sectorForMatching = sectorOriginalText || sectorQuery;
     const hasIndustryIds = industryIds.length > 0;
-    const sectorForFilter = sectorForMatching || sectorQuery;
+    const sectorForFilter = hasIndustryIds ? null : (sectorForMatching || sectorQuery);
     const sectorVariants = hasIndustryIds ? [] : getSectorVariants(sectorForMatching || sectorQuery);
     const queries = generateSearchQueries(jobTitle, sectorQuery, sectorVariants, hasIndustryIds);
 
