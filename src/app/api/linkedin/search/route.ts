@@ -694,8 +694,8 @@ export async function POST(request: Request) {
             category: "people",
             keywords: query,
           };
-          if (locationIds.length > 0) searchBody.location = locationIds;
-          if (industryIds.length > 0) searchBody.industry = { include: industryIds.map(String) };
+          if (locationIds.length > 0) searchBody.location = locationIds.map(String);
+          if (industryIds.length > 0) searchBody.industry = industryIds.map(String);
 
           console.log(
             `[Search] "${query}" start=${start} | stricts=${strictResults.length}/${TARGET} | calls=${apiCallCount}`
